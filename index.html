@@ -44,9 +44,9 @@
             </div>
             
             <div class="flex items-center gap-3">
-                <span class="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Synchro cloud active
+                <span id="cloudStatusBadge" class="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20">
+                    <span id="cloudStatusDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span id="cloudStatusText">Synchro cloud active</span>
                 </span>
             </div>
         </div>
@@ -282,53 +282,77 @@
             try {
                 const response = await fetch('/.netlify/functions/stock');
                 if (response.ok) {
-                    stock = await response.json();
+                    let data = await response.json();
+                    
+                    if (Array.isArray(data)) {
+                        stock = data;
+                    } else if (data && Array.isArray(data.record)) {
+                        stock = data.record;
+                    } else {
+                        stock = [];
+                    }
+                    
                     showNotification("Données cloud chargées");
+                    updateCloudStatus(true);
                 } else {
                     throw new Error();
                 }
             } catch (e) {
                 const saved = localStorage.getItem('resellflow_stock');
                 stock = saved ? JSON.parse(saved) : [...defaultStock];
-                showNotification("Cloud inaccessible. Mode local temporaire active.", "error");
+                if (!Array.isArray(stock)) stock = [];
+                showNotification("Cloud inaccessible. Mode local temporaire actif.", "error");
+                updateCloudStatus(false);
             }
             updateDashboard();
         }
 
-async function loadStock() {
-    try {
-        const response = await fetch('/.netlify/functions/stock');
-        let data = await response.json();
-        
-        if (data && data.record) {
-            stock = data.record;
-        } else if (Array.isArray(data)) {
-            stock = data;
-        } else if (data && typeof data === 'object') {
-            stock = Object.values(data).find(Array.isArray) || [];
-        } else {
-            stock = [];
+        async function saveStock() {
+            if (!Array.isArray(stock)) stock = [];
+            localStorage.setItem('resellflow_stock', JSON.stringify(stock));
+            try {
+                const response = await fetch('/.netlify/functions/stock', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(stock)
+                });
+                if (response.ok) {
+                    showNotification("Données sauvegardées sur le Cloud Netlify !");
+                    updateCloudStatus(true);
+                } else {
+                    throw new Error();
+                }
+            } catch (e) {
+                showNotification("Modifications enregistrées uniquement en local.");
+                updateCloudStatus(false);
+            }
+            updateDashboard();
         }
-        
-        document.getElementById('cloudStatus').className = 'flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full text-xs font-medium border border-emerald-500/20';
-        document.getElementById('cloudStatusText').innerText = 'Synchro cloud active';
-        
-        updateDashboard();
-    } catch (error) {
-        console.error('Erreur de synchro:', error);
-        document.getElementById('cloudStatus').className = 'flex items-center gap-1.5 bg-amber-500/10 text-amber-400 px-2.5 py-1 rounded-full text-xs font-medium border border-amber-500/20';
-        document.getElementById('cloudStatusText').innerText = 'Cloud inaccessible. Mode local temporaire actif.';
-        
-        const localData = localStorage.getItem('resellflow_stock');
-        stock = localData ? JSON.parse(localData) : [];
-        updateDashboard();
-    }
-}
+
+        function updateCloudStatus(isActive) {
+            const badge = document.getElementById('cloudStatusBadge');
+            const dot = document.getElementById('cloudStatusDot');
+            const text = document.getElementById('cloudStatusText');
+            
+            if (!badge || !dot || !text) return;
+            
+            if (isActive) {
+                badge.className = "flex items-center gap-2 text-xs text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20";
+                dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+                text.textContent = "Synchro cloud active";
+            } else {
+                badge.className = "flex items-center gap-2 text-xs text-amber-400 bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/20";
+                dot.className = "w-2 h-2 rounded-full bg-amber-500";
+                text.textContent = "Mode local temporaire";
+            }
+        }
 
         function showNotification(message, type = 'success') {
             const toast = document.getElementById('toast');
             const toastIcon = document.getElementById('toastIcon');
             const toastMessage = document.getElementById('toastMessage');
+
+            if (!toast || !toastIcon || !toastMessage) return;
 
             toastMessage.textContent = message;
             if (type === 'success') {
@@ -347,15 +371,17 @@ async function loadStock() {
         }
 
         function updateDashboard() {
+            if (!Array.isArray(stock)) stock = [];
             updateKPIs();
             renderStockTable();
             renderCharts();
         }
 
         function updateKPIs() {
+            if (!Array.isArray(stock)) stock = [];
             const totalItems = stock.length;
-            const inStockItems = stock.filter(item => item.status === 'En Stock').length;
-            const soldItems = stock.filter(item => item.status === 'Vendu');
+            const inStockItems = stock.filter(item => item && item.status === 'En Stock').length;
+            const soldItems = stock.filter(item => item && item.status === 'Vendu');
             
             const totalInvest = stock.reduce((acc, item) => acc + (parseFloat(item.buyPrice) || 0), 0);
             const totalVentes = soldItems.reduce((acc, item) => acc + (parseFloat(item.sellPrice) || 0), 0);
@@ -365,7 +391,7 @@ async function loadStock() {
             
             let potentialBenefice = 0;
             stock.forEach(item => {
-                if (item.status !== 'Vendu') {
+                if (item && item.status !== 'Vendu') {
                     const buy = parseFloat(item.buyPrice) || 0;
                     const target = parseFloat(item.targetPrice) || buy;
                     potentialBenefice += (target - buy);
@@ -385,12 +411,15 @@ async function loadStock() {
         }
 
         function renderStockTable() {
+            if (!Array.isArray(stock)) stock = [];
             const search = document.getElementById('searchInput').value.toLowerCase();
             const filter = document.getElementById('filterStatus').value;
             const tbody = document.getElementById('stockTableBody');
+            if (!tbody) return;
             tbody.innerHTML = '';
 
             const filteredStock = stock.filter(item => {
+                if (!item) return false;
                 const matchesSearch = item.name.toLowerCase().includes(search) || 
                                       (item.category && item.category.toLowerCase().includes(search)) ||
                                       (item.platform && item.platform.toLowerCase().includes(search));
@@ -486,6 +515,7 @@ async function loadStock() {
         function toggleSellDate() {
             const status = document.getElementById('productStatus').value;
             const container = document.getElementById('sellDateContainer');
+            if (!container) return;
             if (status === 'Vendu') {
                 container.classList.remove('hidden');
             } else {
@@ -502,15 +532,19 @@ async function loadStock() {
             
             const modal = document.getElementById('productModal');
             const container = document.getElementById('modalContainer');
-            modal.classList.remove('opacity-0', 'pointer-events-none');
-            container.classList.remove('scale-95');
+            if (modal && container) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                container.classList.remove('scale-95');
+            }
         }
 
         function closeModal() {
             const modal = document.getElementById('productModal');
             const container = document.getElementById('modalContainer');
-            modal.classList.add('opacity-0', 'pointer-events-none');
-            container.classList.add('scale-95');
+            if (modal && container) {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                container.classList.add('scale-95');
+            }
         }
 
         function saveProduct(event) {
@@ -526,8 +560,10 @@ async function loadStock() {
             const buyDate = document.getElementById('productBuyDate').value;
             const sellDate = status === 'Vendu' ? (document.getElementById('productSellDate').value || new Date().toISOString().split('T')[0]) : null;
 
+            if (!Array.isArray(stock)) stock = [];
+
             if (id) {
-                const idx = stock.findIndex(item => item.id === id);
+                const idx = stock.findIndex(item => item && item.id === id);
                 if (idx !== -1) {
                     stock[idx] = { ...stock[idx], name, category, platform, buyPrice, targetPrice, sellPrice, status, buyDate, sellDate };
                 }
@@ -544,7 +580,8 @@ async function loadStock() {
         }
 
         function editProduct(id) {
-            const item = stock.find(p => p.id === id);
+            if (!Array.isArray(stock)) return;
+            const item = stock.find(p => p && p.id === id);
             if (!item) return;
 
             openModal("Modifier l'article");
@@ -563,7 +600,8 @@ async function loadStock() {
         }
 
         function quickSell(id) {
-            const item = stock.find(p => p.id === id);
+            if (!Array.isArray(stock)) return;
+            const item = stock.find(p => p && p.id === id);
             if (!item) return;
 
             const sellPrice = prompt(`Prix de vente final pour "${item.name}" :`, item.targetPrice || item.buyPrice);
@@ -583,16 +621,18 @@ async function loadStock() {
         }
 
         function deleteProduct(id) {
+            if (!Array.isArray(stock)) return;
             if (confirm("Voulez-vous vraiment supprimer cet article ?")) {
-                stock = stock.filter(p => p.id !== id);
+                stock = stock.filter(p => p && p.id !== id);
                 saveStock();
             }
         }
 
         function renderCharts() {
+            if (!Array.isArray(stock)) stock = [];
             const statuses = { 'En Stock': 0, 'Vendu': 0, 'Réservé': 0 };
             stock.forEach(item => {
-                if (statuses[item.status] !== undefined) {
+                if (item && statuses[item.status] !== undefined) {
                     statuses[item.status]++;
                 }
             });
@@ -601,30 +641,33 @@ async function loadStock() {
                 statusChartInstance.destroy();
             }
 
-            const ctxStatus = document.getElementById('statusChart').getContext('2d');
-            statusChartInstance = new Chart(ctxStatus, {
-                type: 'doughnut',
-                data: {
-                    labels: ['En Stock', 'Vendu', 'Réservé'],
-                    datasets: [{
-                        data: [statuses['En Stock'], statuses['Vendu'], statuses['Réservé']],
-                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
-                        borderColor: '#0f172a',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
+            const canvasStatus = document.getElementById('statusChart');
+            if (canvasStatus) {
+                const ctxStatus = canvasStatus.getContext('2d');
+                statusChartInstance = new Chart(ctxStatus, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['En Stock', 'Vendu', 'Réservé'],
+                        datasets: [{
+                            data: [statuses['En Stock'], statuses['Vendu'], statuses['Réservé']],
+                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
+                            borderColor: '#0f172a',
+                            borderWidth: 2
+                        }]
                     },
-                    cutout: '75%'
-                }
-            });
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        cutout: '75%'
+                    }
+                });
+            }
 
             const soldSorted = stock
-                .filter(item => item.status === 'Vendu' && item.sellDate)
+                .filter(item => item && item.status === 'Vendu' && item.sellDate)
                 .sort((a, b) => new Date(a.sellDate) - new Date(b.sellDate));
 
             let cumulativeProfit = 0;
@@ -642,40 +685,43 @@ async function loadStock() {
                 profitChartInstance.destroy();
             }
 
-            const ctxProfit = document.getElementById('profitChart').getContext('2d');
-            profitChartInstance = new Chart(ctxProfit, {
-                type: 'line',
-                data: {
-                    labels: profitLabels.length ? profitLabels : ['Aucune vente'],
-                    datasets: [{
-                        label: 'Bénéfice Cumulé (€)',
-                        data: profitData.length ? profitData : [0],
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        fill: true,
-                        tension: 0.3,
-                        borderWidth: 2,
-                        pointBackgroundColor: '#10b981'
-                    }],
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
+            const canvasProfit = document.getElementById('profitChart');
+            if (canvasProfit) {
+                const ctxProfit = canvasProfit.getContext('2d');
+                profitChartInstance = new Chart(ctxProfit, {
+                    type: 'line',
+                    data: {
+                        labels: profitLabels.length ? profitLabels : ['Aucune vente'],
+                        datasets: [{
+                            label: 'Bénéfice Cumulé (€)',
+                            data: profitData.length ? profitData : [0],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            borderWidth: 2,
+                            pointBackgroundColor: '#10b981'
+                        }],
                     },
-                    scales: {
-                        y: {
-                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                            ticks: { color: '#94a3b8' }
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
                         },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: '#94a3b8' }
+                        scales: {
+                            y: {
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#94a3b8' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#94a3b8' }
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
         }
     </script>
 </body>
