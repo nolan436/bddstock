@@ -295,24 +295,35 @@
             updateDashboard();
         }
 
-        async function saveStock() {
-            localStorage.setItem('resellflow_stock', JSON.stringify(stock));
-            try {
-                const response = await fetch('/.netlify/functions/stock', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(stock)
-                });
-                if (response.ok) {
-                    showNotification("Données sauvegardées sur le Cloud Netlify !");
-                } else {
-                    throw new Error();
-                }
-            } catch (e) {
-                showNotification("Modifications enregistrées uniquement en local.");
-            }
-            updateDashboard();
+async function loadStock() {
+    try {
+        const response = await fetch('/.netlify/functions/stock');
+        let data = await response.json();
+        
+        if (data && data.record) {
+            stock = data.record;
+        } else if (Array.isArray(data)) {
+            stock = data;
+        } else if (data && typeof data === 'object') {
+            stock = Object.values(data).find(Array.isArray) || [];
+        } else {
+            stock = [];
         }
+        
+        document.getElementById('cloudStatus').className = 'flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full text-xs font-medium border border-emerald-500/20';
+        document.getElementById('cloudStatusText').innerText = 'Synchro cloud active';
+        
+        updateDashboard();
+    } catch (error) {
+        console.error('Erreur de synchro:', error);
+        document.getElementById('cloudStatus').className = 'flex items-center gap-1.5 bg-amber-500/10 text-amber-400 px-2.5 py-1 rounded-full text-xs font-medium border border-amber-500/20';
+        document.getElementById('cloudStatusText').innerText = 'Cloud inaccessible. Mode local temporaire actif.';
+        
+        const localData = localStorage.getItem('resellflow_stock');
+        stock = localData ? JSON.parse(localData) : [];
+        updateDashboard();
+    }
+}
 
         function showNotification(message, type = 'success') {
             const toast = document.getElementById('toast');
