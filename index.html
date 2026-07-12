@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Achat-Revente</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#10b981',
+                        darkBg: '#0f172a',
+                        cardBg: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2 rounded-xl text-white">
+                    <i data-lucide="trending-up" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold leading-none">ResellFlow</h1>
+                    <span class="text-xs text-slate-400">Dashboard Achat-Revente</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <span class="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Synchro cloud active
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-400 mb-2">
+                    <span class="text-sm font-medium">Articles en Stock</span>
+                    <i data-lucide="package" class="w-5 h-5 text-blue-500"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold" id="kpiStock">0</h3>
+                    <p class="text-xs text-slate-500 mt-1" id="kpiStockDesc">0 au total</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-400 mb-2">
+                    <span class="text-sm font-medium">Investissement</span>
+                    <i data-lucide="wallet" class="w-5 h-5 text-amber-500"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold" id="kpiInvest">0,00 €</h3>
+                    <p class="text-xs text-slate-500 mt-1">Capital engagé</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-400 mb-2">
+                    <span class="text-sm font-medium">Ventes Réalisées</span>
+                    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-500"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold" id="kpiVentes">0,00 €</h3>
+                    <p class="text-xs text-slate-500 mt-1" id="kpiVentesDesc">0 vendus</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-400 mb-2">
+                    <span class="text-sm font-medium">Bénéfice Net</span>
+                    <i data-lucide="banknote" class="w-5 h-5 text-emerald-400"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-emerald-400" id="kpiBenefice">0,00 €</h3>
+                    <p class="text-xs text-emerald-500/80 mt-1" id="kpiPotentialBenefice">Potentiel: 0,00 €</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-400 mb-2">
+                    <span class="text-sm font-medium">R.O.I. Moyen</span>
+                    <i data-lucide="percent" class="w-5 h-5 text-purple-500"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold" id="kpiRoi">0%</h3>
+                    <p class="text-xs text-slate-500 mt-1">Sur ventes finalisées</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-lg font-bold">Évolution des Bénéfices</h2>
+                    <span class="text-xs text-slate-400 bg-slate-800 px-2.5 py-1 rounded-lg">Cumulé</span>
+                </div>
+                <div class="h-[240px]">
+                    <canvas id="profitChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col">
+                <h2 class="text-lg font-bold mb-6">Répartition du Stock</h2>
+                <div class="flex-1 flex items-center justify-center relative min-h-[180px]">
+                    <canvas id="statusChart" class="max-h-[180px]"></canvas>
+                </div>
+                <div class="grid grid-cols-3 gap-2 mt-4 text-center text-xs">
+                    <div class="p-2 bg-slate-800/50 rounded-xl">
+                        <div class="w-2.5 h-2.5 bg-blue-500 rounded-full mx-auto mb-1"></div>
+                        <span class="text-slate-400">En stock</span>
+                    </div>
+                    <div class="p-2 bg-slate-800/50 rounded-xl">
+                        <div class="w-2.5 h-2.5 bg-emerald-500 rounded-full mx-auto mb-1"></div>
+                        <span class="text-slate-400">Vendu</span>
+                    </div>
+                    <div class="p-2 bg-slate-800/50 rounded-xl">
+                        <div class="w-2.5 h-2.5 bg-amber-500 rounded-full mx-auto mb-1"></div>
+                        <span class="text-slate-400">Réservé</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+            <div class="p-5 border-b border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-bold">Inventaire</h2>
+                    <p class="text-sm text-slate-400">Gérez, modifiez et suivez vos articles d'achat-revente</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="relative min-w-[200px]">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                        <input type="text" id="searchInput" oninput="renderStockTable()" placeholder="Rechercher un article..." class="w-full bg-slate-800 text-sm pl-10 pr-4 py-2 rounded-xl border border-slate-700 focus:outline-none focus:border-blue-500 transition-all">
+                    </div>
+                    <select id="filterStatus" onchange="renderStockTable()" class="bg-slate-800 text-sm px-4 py-2 rounded-xl border border-slate-700 focus:outline-none focus:border-blue-500 transition-all">
+                        <option value="all">Tous les statuts</option>
+                        <option value="En Stock">En Stock</option>
+                        <option value="Réservé">Réservé</option>
+                        <option value="Vendu">Vendu</option>
+                    </select>
+                    <button onclick="openModal()" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        Ajouter un article
+                    </button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-800 bg-slate-950/40 text-xs text-slate-400 font-semibold uppercase tracking-wider">
+                            <th class="py-4 px-6">Article</th>
+                            <th class="py-4 px-6">Catégorie / Plateforme</th>
+                            <th class="py-4 px-6 text-right">Prix d'Achat</th>
+                            <th class="py-4 px-6 text-right">Prix Cible</th>
+                            <th class="py-4 px-6 text-right">Vendu Pour</th>
+                            <th class="py-4 px-6 text-center">Statut</th>
+                            <th class="py-4 px-6 text-right">Bénéfice</th>
+                            <th class="py-4 px-6 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stockTableBody" class="divide-y divide-slate-800 text-sm">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="productModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl transform scale-95 transition-transform duration-200" id="modalContainer">
+            <div class="p-6 border-b border-slate-800 flex items-center justify-between">
+                <h3 class="text-lg font-bold" id="modalTitle">Ajouter un article</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="productForm" onsubmit="saveProduct(event)" class="p-6 space-y-4">
+                <input type="hidden" id="productId">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Nom de l'article *</label>
+                    <input type="text" id="productName" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-slate-100">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Catégorie</label>
+                        <input type="text" id="productCategory" placeholder="ex: Sneakers, Tech..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-slate-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Plateforme d'achat</label>
+                        <input type="text" id="productPlatform" placeholder="ex: Vinted, Leboncoin..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-slate-100">
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Prix Achat (€) *</label>
+                        <input type="number" step="0.01" id="productBuyPrice" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-slate-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Prix Cible (€)</label>
+                        <input type="number" step="0.01" id="productTargetPrice" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-slate-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Prix de Vente (€)</label>
+                        <input type="number" step="0.01" id="productSellPrice" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-slate-100">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Statut</label>
+                        <select id="productStatus" onchange="toggleSellDate()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-slate-100">
+                            <option value="En Stock">En Stock</option>
+                            <option value="Réservé">Réservé</option>
+                            <option value="Vendu">Vendu</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Date d'achat</label>
+                        <input type="date" id="productBuyDate" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-slate-100">
+                    </div>
+                </div>
+                <div id="sellDateContainer" class="hidden">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Date de vente</label>
+                    <input type="date" id="productSellDate" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-slate-100">
+                </div>
+                <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                    <button type="button" onclick="closeModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-5 py-2.5 rounded-xl text-sm font-medium transition-all">Annuler</button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all">Sauvegarder</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-2xl flex items-center gap-3 transform translate-y-20 opacity-0 pointer-events-none transition-all duration-300 z-50">
+        <div id="toastIcon" class="p-1.5 rounded-lg text-white"></div>
+        <p id="toastMessage" class="text-sm font-medium text-slate-200"></p>
+    </div>
+
+    <footer class="border-t border-slate-800 py-6 text-center text-xs text-slate-500 mt-12 bg-slate-900/10">
+        <p>&copy; 2026 ResellFlow. Tous droits réservés.</p>
+    </footer>
+
+    <script>
+        let stock = [];
+        let profitChartInstance = null;
+        let statusChartInstance = null;
+
+        const defaultStock = [
+            { id: "1", name: "Nike Dunk Low Retro Blue", category: "Sneakers", platform: "Nike", buyPrice: 110, targetPrice: 160, sellPrice: 155, status: "Vendu", buyDate: "2026-06-10", sellDate: "2026-06-25" },
+            { id: "2", name: "Sony WH-1000XM4 Black", category: "Tech", platform: "Amazon", buyPrice: 180, targetPrice: 250, sellPrice: null, status: "En Stock", buyDate: "2026-07-01", sellDate: null },
+            { id: "3", name: "Supreme Box Logo Hooded S", category: "Vêtements", platform: "Supreme", buyPrice: 168, targetPrice: 280, sellPrice: 280, status: "Réservé", buyDate: "2026-07-05", sellDate: null }
+        ];
+
+        window.onload = function() {
+            lucide.createIcons();
+            loadStock();
+        };
+
+        async function loadStock() {
+            try {
+                const response = await fetch('/.netlify/functions/stock');
+                if (response.ok) {
+                    stock = await response.json();
+                    showNotification("Données cloud chargées");
+                } else {
+                    throw new Error();
+                }
+            } catch (e) {
+                const saved = localStorage.getItem('resellflow_stock');
+                stock = saved ? JSON.parse(saved) : [...defaultStock];
+                showNotification("Cloud inaccessible. Mode local temporaire active.", "error");
+            }
+            updateDashboard();
+        }
+
+        async function saveStock() {
+            localStorage.setItem('resellflow_stock', JSON.stringify(stock));
+            try {
+                const response = await fetch('/.netlify/functions/stock', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(stock)
+                });
+                if (response.ok) {
+                    showNotification("Données sauvegardées sur le Cloud Netlify !");
+                } else {
+                    throw new Error();
+                }
+            } catch (e) {
+                showNotification("Modifications enregistrées uniquement en local.");
+            }
+            updateDashboard();
+        }
+
+        function showNotification(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastMessage = document.getElementById('toastMessage');
+
+            toastMessage.textContent = message;
+            if (type === 'success') {
+                toastIcon.className = 'p-1.5 rounded-lg text-white bg-emerald-600';
+                toastIcon.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5"></i>';
+            } else {
+                toastIcon.className = 'p-1.5 rounded-lg text-white bg-red-600';
+                toastIcon.innerHTML = '<i data-lucide="alert-circle" class="w-5 h-5"></i>';
+            }
+            lucide.createIcons();
+
+            toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        function updateDashboard() {
+            updateKPIs();
+            renderStockTable();
+            renderCharts();
+        }
+
+        function updateKPIs() {
+            const totalItems = stock.length;
+            const inStockItems = stock.filter(item => item.status === 'En Stock').length;
+            const soldItems = stock.filter(item => item.status === 'Vendu');
+            
+            const totalInvest = stock.reduce((acc, item) => acc + (parseFloat(item.buyPrice) || 0), 0);
+            const totalVentes = soldItems.reduce((acc, item) => acc + (parseFloat(item.sellPrice) || 0), 0);
+            const totalCostSold = soldItems.reduce((acc, item) => acc + (parseFloat(item.buyPrice) || 0), 0);
+            
+            const realBenefice = totalVentes - totalCostSold;
+            
+            let potentialBenefice = 0;
+            stock.forEach(item => {
+                if (item.status !== 'Vendu') {
+                    const buy = parseFloat(item.buyPrice) || 0;
+                    const target = parseFloat(item.targetPrice) || buy;
+                    potentialBenefice += (target - buy);
+                }
+            });
+
+            const roi = totalCostSold > 0 ? (realBenefice / totalCostSold) * 100 : 0;
+
+            document.getElementById('kpiStock').textContent = inStockItems;
+            document.getElementById('kpiStockDesc').textContent = `${totalItems} articles répertoriés`;
+            document.getElementById('kpiInvest').textContent = `${totalInvest.toFixed(2)} €`;
+            document.getElementById('kpiVentes').textContent = `${totalVentes.toFixed(2)} €`;
+            document.getElementById('kpiVentesDesc').textContent = `${soldItems.length} articles vendus`;
+            document.getElementById('kpiBenefice').textContent = `${realBenefice.toFixed(2)} €`;
+            document.getElementById('kpiPotentialBenefice').textContent = `Potentiel: +${potentialBenefice.toFixed(2)} €`;
+            document.getElementById('kpiRoi').textContent = `${roi.toFixed(0)}%`;
+        }
+
+        function renderStockTable() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const filter = document.getElementById('filterStatus').value;
+            const tbody = document.getElementById('stockTableBody');
+            tbody.innerHTML = '';
+
+            const filteredStock = stock.filter(item => {
+                const matchesSearch = item.name.toLowerCase().includes(search) || 
+                                      (item.category && item.category.toLowerCase().includes(search)) ||
+                                      (item.platform && item.platform.toLowerCase().includes(search));
+                const matchesFilter = filter === 'all' || item.status === filter;
+                return matchesSearch && matchesFilter;
+            });
+
+            if (filteredStock.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-12 text-slate-500">
+                            <i data-lucide="package-open" class="w-10 h-10 mx-auto mb-3 opacity-50"></i>
+                            Aucun article trouvé
+                        </td>
+                    </tr>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            filteredStock.forEach(item => {
+                const buyPrice = parseFloat(item.buyPrice) || 0;
+                const targetPrice = parseFloat(item.targetPrice) || 0;
+                const sellPrice = parseFloat(item.sellPrice) || 0;
+                
+                let benefit = 0;
+                let benefitClass = 'text-slate-400';
+                
+                if (item.status === 'Vendu') {
+                    benefit = sellPrice - buyPrice;
+                    benefitClass = benefit >= 0 ? 'text-emerald-400 font-semibold' : 'text-rose-400 font-semibold';
+                } else {
+                    benefit = targetPrice - buyPrice;
+                    benefitClass = 'text-slate-500 italic';
+                }
+
+                let statusBadge = '';
+                if (item.status === 'En Stock') {
+                    statusBadge = '<span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">En Stock</span>';
+                } else if (item.status === 'Réservé') {
+                    statusBadge = '<span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">Réservé</span>';
+                } else {
+                    statusBadge = '<span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Vendu</span>';
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-900/40 transition-colors';
+                tr.innerHTML = `
+                    <td class="py-4 px-6 font-medium text-slate-200">
+                        <div>
+                            <p>${item.name}</p>
+                            <span class="text-xs text-slate-500">${item.buyDate ? 'Acheté le ' + formatDate(item.buyDate) : 'Date inconnue'}</span>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="flex flex-col">
+                            <span class="text-slate-300">${item.category || '-'}</span>
+                            <span class="text-xs text-slate-500">${item.platform || '-'}</span>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6 text-right font-medium">${buyPrice.toFixed(2)} €</td>
+                    <td class="py-4 px-6 text-right text-slate-400">${targetPrice > 0 ? targetPrice.toFixed(2) + ' €' : '-'}</td>
+                    <td class="py-4 px-6 text-right text-slate-200 font-medium">${item.status === 'Vendu' ? sellPrice.toFixed(2) + ' €' : '-'}</td>
+                    <td class="py-4 px-6 text-center">${statusBadge}</td>
+                    <td class="py-4 px-6 text-right ${benefitClass}">${benefit >= 0 ? '+' : ''}${benefit.toFixed(2)} €</td>
+                    <td class="py-4 px-6">
+                        <div class="flex items-center justify-center gap-2">
+                            ${item.status !== 'Vendu' ? `
+                                <button onclick="quickSell('${item.id}')" title="Marquer comme vendu" class="p-1.5 hover:bg-emerald-500/10 rounded-lg text-emerald-400 transition-colors">
+                                    <i data-lucide="check" class="w-4 h-4"></i>
+                                </button>
+                            ` : ''}
+                            <button onclick="editProduct('${item.id}')" title="Modifier" class="p-1.5 hover:bg-blue-500/10 rounded-lg text-blue-400 transition-colors">
+                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="deleteProduct('${item.id}')" title="Supprimer" class="p-1.5 hover:bg-rose-500/10 rounded-lg text-rose-400 transition-colors">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('fr-FR');
+        }
+
+        function toggleSellDate() {
+            const status = document.getElementById('productStatus').value;
+            const container = document.getElementById('sellDateContainer');
+            if (status === 'Vendu') {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        function openModal(title = "Ajouter un article") {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('productForm').reset();
+            document.getElementById('productId').value = '';
+            document.getElementById('productBuyDate').value = new Date().toISOString().split('T')[0];
+            toggleSellDate();
+            
+            const modal = document.getElementById('productModal');
+            const container = document.getElementById('modalContainer');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            container.classList.remove('scale-95');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('productModal');
+            const container = document.getElementById('modalContainer');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            container.classList.add('scale-95');
+        }
+
+        function saveProduct(event) {
+            event.preventDefault();
+            const id = document.getElementById('productId').value;
+            const name = document.getElementById('productName').value;
+            const category = document.getElementById('productCategory').value;
+            const platform = document.getElementById('productPlatform').value;
+            const buyPrice = parseFloat(document.getElementById('productBuyPrice').value) || 0;
+            const targetPrice = parseFloat(document.getElementById('productTargetPrice').value) || 0;
+            const sellPrice = parseFloat(document.getElementById('productSellPrice').value) || null;
+            const status = document.getElementById('productStatus').value;
+            const buyDate = document.getElementById('productBuyDate').value;
+            const sellDate = status === 'Vendu' ? (document.getElementById('productSellDate').value || new Date().toISOString().split('T')[0]) : null;
+
+            if (id) {
+                const idx = stock.findIndex(item => item.id === id);
+                if (idx !== -1) {
+                    stock[idx] = { ...stock[idx], name, category, platform, buyPrice, targetPrice, sellPrice, status, buyDate, sellDate };
+                }
+            } else {
+                const newProduct = {
+                    id: Date.now().toString(),
+                    name, category, platform, buyPrice, targetPrice, sellPrice, status, buyDate, sellDate
+                };
+                stock.push(newProduct);
+            }
+
+            saveStock();
+            closeModal();
+        }
+
+        function editProduct(id) {
+            const item = stock.find(p => p.id === id);
+            if (!item) return;
+
+            openModal("Modifier l'article");
+            document.getElementById('productId').value = item.id;
+            document.getElementById('productName').value = item.name;
+            document.getElementById('productCategory').value = item.category || '';
+            document.getElementById('productPlatform').value = item.platform || '';
+            document.getElementById('productBuyPrice').value = item.buyPrice;
+            document.getElementById('productTargetPrice').value = item.targetPrice || '';
+            document.getElementById('productSellPrice').value = item.sellPrice || '';
+            document.getElementById('productStatus').value = item.status;
+            document.getElementById('productBuyDate').value = item.buyDate || '';
+            document.getElementById('productSellDate').value = item.sellDate || '';
+            
+            toggleSellDate();
+        }
+
+        function quickSell(id) {
+            const item = stock.find(p => p.id === id);
+            if (!item) return;
+
+            const sellPrice = prompt(`Prix de vente final pour "${item.name}" :`, item.targetPrice || item.buyPrice);
+            if (sellPrice === null) return;
+
+            const parsedPrice = parseFloat(sellPrice);
+            if (isNaN(parsedPrice)) {
+                showNotification("Prix invalide !", "error");
+                return;
+            }
+
+            item.status = 'Vendu';
+            item.sellPrice = parsedPrice;
+            item.sellDate = new Date().toISOString().split('T')[0];
+
+            saveStock();
+        }
+
+        function deleteProduct(id) {
+            if (confirm("Voulez-vous vraiment supprimer cet article ?")) {
+                stock = stock.filter(p => p.id !== id);
+                saveStock();
+            }
+        }
+
+        function renderCharts() {
+            const statuses = { 'En Stock': 0, 'Vendu': 0, 'Réservé': 0 };
+            stock.forEach(item => {
+                if (statuses[item.status] !== undefined) {
+                    statuses[item.status]++;
+                }
+            });
+
+            if (statusChartInstance) {
+                statusChartInstance.destroy();
+            }
+
+            const ctxStatus = document.getElementById('statusChart').getContext('2d');
+            statusChartInstance = new Chart(ctxStatus, {
+                type: 'doughnut',
+                data: {
+                    labels: ['En Stock', 'Vendu', 'Réservé'],
+                    datasets: [{
+                        data: [statuses['En Stock'], statuses['Vendu'], statuses['Réservé']],
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
+                        borderColor: '#0f172a',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    cutout: '75%'
+                }
+            });
+
+            const soldSorted = stock
+                .filter(item => item.status === 'Vendu' && item.sellDate)
+                .sort((a, b) => new Date(a.sellDate) - new Date(b.sellDate));
+
+            let cumulativeProfit = 0;
+            const profitData = [];
+            const profitLabels = [];
+
+            soldSorted.forEach(item => {
+                const profit = (parseFloat(item.sellPrice) || 0) - (parseFloat(item.buyPrice) || 0);
+                cumulativeProfit += profit;
+                profitData.push(cumulativeProfit);
+                profitLabels.push(formatDate(item.sellDate));
+            });
+
+            if (profitChartInstance) {
+                profitChartInstance.destroy();
+            }
+
+            const ctxProfit = document.getElementById('profitChart').getContext('2d');
+            profitChartInstance = new Chart(ctxProfit, {
+                type: 'line',
+                data: {
+                    labels: profitLabels.length ? profitLabels : ['Aucune vente'],
+                    datasets: [{
+                        label: 'Bénéfice Cumulé (€)',
+                        data: profitData.length ? profitData : [0],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 2,
+                        pointBackgroundColor: '#10b981'
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
