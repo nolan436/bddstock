@@ -1,45 +1,42 @@
-const { getStore } = require("@netlify/blobs");
-
 exports.handler = async (event) => {
+    const token = process.env.NETLIFY_BLOBS_TOKEN;
+    const siteId = process.env.NETLIFY_BLOBS_SITE_ID;
+    
+    const url = `https://api.netlify.com/api/v1/sites/${siteId}/blobs/stores/resellflow_store/keys/stock`;
+    const headers = {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+    };
+
     try {
-        const store = getStore({
-            name: "resellflow_store",
-            consistency: "strong"
-        });
-        
         if (event.httpMethod === "GET") {
-            let data = [];
-            try {
-                data = await store.get("stock", { type: "json" });
-            } catch (e) {
-                // Si le store est vide
+            const res = await fetch(url, { headers });
+            if (res.status === 404) {
+                return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify([]) };
             }
+            const data = await res.json();
             return {
                 statusCode: 200,
-                headers: { 
-                    "Content-Type": "application/json",
-                    "Access-Control-Allow-Origin": "*"
-                },
-                body: JSON.stringify(data || [])
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
             };
         }
-        
+
         if (event.httpMethod === "POST") {
-            const stockData = JSON.parse(event.body);
-            await store.setJSON("stock", stockData);
+            await fetch(url, {
+                method: "PUT",
+                headers,
+                body: event.body
+            });
             return {
                 statusCode: 200,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ success: true })
             };
         }
-        
+
         return { statusCode: 405 };
-    } catch (globalError) {
-        return {
-            statusCode: 500,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ error: globalError.message })
-        };
+    } catch (err) {
+        return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
     }
 };
