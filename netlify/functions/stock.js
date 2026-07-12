@@ -12,12 +12,16 @@ exports.handler = async (event) => {
         if (event.httpMethod === "GET") {
             const res = await fetch(url, { headers });
             if (res.status === 404) {
-                return { statusCode: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify([]) };
+                return {
+                    statusCode: 200,
+                    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+                    body: JSON.stringify([])
+                };
             }
             const data = await res.json();
             return {
                 statusCode: 200,
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
                 body: JSON.stringify(data)
             };
         }
@@ -30,13 +34,17 @@ exports.handler = async (event) => {
             });
             return {
                 statusCode: 200,
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
                 body: JSON.stringify({ success: true })
             };
         }
 
         return { statusCode: 405 };
     } catch (err) {
-        return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+        return { 
+            statusCode: 500, 
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ error: err.message }) 
+        };
     }
 };
